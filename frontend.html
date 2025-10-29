@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polling App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f8fa;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #3f51b5;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    input, button, textarea {
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    button {
+      background: #3f51b5;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2e3a8c;
+    }
+    .poll {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 15px;
+    }
+    .option {
+      background: #f2f2f2;
+      padding: 6px;
+      border-radius: 4px;
+      margin-top: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .result {
+      margin-top: 10px;
+      padding: 5px;
+      background: #e8e8ff;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Polling Website</h1>
+  <div class="container">
+
+    <h2>Create Poll</h2>
+    <input id="title" placeholder="Poll title">
+    <input id="owner" placeholder="Owner name">
+    <textarea id="options" rows="3" placeholder="Enter options (comma separated)"></textarea>
+    <button onclick="createPoll()">Create Poll</button>
+
+    <hr>
+
+    <h2>All Polls</h2>
+    <div id="polls"></div>
+
+  </div>
+
+  <script>
+
+    const API_URL = "http://localhost:3000";
+
+    async function loadPolls() {
+      const res = await fetch(`${API_URL}/fetchpoll`);
+      const data = await res.json();
+      console.log(data);
+      const pollsContainer = document.getElementById("polls");
+      pollsContainer.innerHTML = "";
+
+     if (!data.polls || data.polls.length === 0) {
+  const div = document.createElement("div");
+  div.className = "poll";
+  div.innerHTML = "<h3>No Poll Yet</h3>";
+  pollsContainer.appendChild(div);
+  return;
+}
+
+
+      data.polls.forEach(poll => {
+        const div = document.createElement("div");
+        div.className = "poll";
+        div.innerHTML = `
+          <h3>${poll.title}</h3>
+          <p><b>Owner:</b> ${poll.owner}</p>
+          ${poll.options.map((opt, i) => `
+            <div class="option">
+              <span>${opt.text} (${opt.votes} votes)</span>
+              <button onclick="votePoll('${poll._id}', ${i})">Vote</button>
+            </div>
+          `).join("")}
+          <button onclick="showPollDetails('${poll._id}')">View Result</button>
+          <div id="result-${poll._id}" class="result"></div>
+        `;
+        pollsContainer.appendChild(div);
+      });
+    }
+
+ 
+    async function createPoll() {
+      const title = document.getElementById("title").value.trim();
+      const owner = document.getElementById("owner").value.trim();
+      const options = document.getElementById("options").value.split(",").map(o => o.trim()).filter(o => o);
+
+      if (!title || options.length < 2 || !owner) {
+        alert("Please fill all fields and provide at least 2 options");
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/createpoll`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, options, owner })
+      });
+       console.log(res);
+      if (res.ok) {
+        alert("Poll created successfully!");
+        document.getElementById("title").value = "";
+        document.getElementById("owner").value = "";
+        document.getElementById("options").value = "";
+        loadPolls();
+      } else {
+        alert("Failed to create poll");
+      }
+    }
+
+
+    async function votePoll(pollId, optionIndex) {
+      const res = await fetch(`${API_URL}/vote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pollId, optionIndex })
+      });
+      if (res.ok) {
+        alert("Vote recorded!");
+        loadPolls();
+      } else {
+        alert("Failed to vote");
+      }
+    }
+
+
+    async function showPollDetails(pollId) {
+      const res = await fetch(`${API_URL}/getpolldetail?pollId=${pollId}`);
+      const data = await res.json();
+
+      const resultDiv = document.getElementById(`result-${pollId}`);
+      const winner = data.poll.winner;
+      const options = data.poll.options;
+
+      let html = `<h4>Results:</h4>`;
+      options.forEach(opt => {
+        html += `<p>${opt.text}: ${opt.votes} votes</p>`;
+      });
+      html += `<b>🏆 Winner: ${winner.text} (${winner.votes} votes)</b>`;
+      resultDiv.innerHTML = html;
+    }
+
+    loadPolls();
+
+  </script>
+</body>
+</html>
