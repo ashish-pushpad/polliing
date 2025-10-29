@@ -22,17 +22,19 @@ Frontend: Simple HTML + JavaScript (fetch API)
 
 Environment Variables: .env file for database connection
 
-📂 Project Structure
-backend/
-    │
-    ├── connection.js         # Database connection setup
-    ├── pool.model.js         # Mongoose schema for Polls
-    ├── app.js                # Main Express server file
-    ├── .env                  # Environment variables (ignored in Git)
-    ├── package.json
+```text
+📂 Project Root
+├── backend/
+│   ├── connection.js         # Database connection setup
+│   ├── pool.model.js         # Mongoose schema for Polls
+│   ├── app.js                # Main Express server file
+│   ├── package.json          # Backend dependencies & scripts
+│   └── .env                  # Environment variables (ignored by Git)
+├── index.html                # Frontend HTML (single-page)
 ├── .gitignore
-├── index.html
 └── README.md
+```
+
 
 ⚙️ Setup Instructions
 1. Clone the repository
